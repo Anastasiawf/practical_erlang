@@ -1,5 +1,4 @@
 -module(main).
-
 -export([sample_champ/0, get_stat/1, filter_sick_players/1, make_pairs/2]).
 -include_lib("eunit/include/eunit.hrl").
 
@@ -60,7 +59,23 @@ sample_champ() ->
 
 
 get_stat(Champ) ->
-    {0, 0, 0.0, 0.9}.
+Champ_stat = lists:foldl(
+fun(Team,Acc) ->
+{team,_Name,Players} = Team,
+{NT,NP,AA,AR} = Acc, %%NT - num_teams, NP - num_players, AA - avg_age, AR - avg_rating
+Acc1 = {NT +1, lists:foldl(fun(_Player, NP_1) -> NP_1+1
+end,NP,Players),
+lists:foldl(fun(Player,AA_1) ->{player,_,Age,_Rating,_Health} = Player,
+AA_1+Age
+end,AA,Players),
+lists:foldl(
+fun(Player,AR_1) ->{player,_,_,Rating,_} = Player,
+AR_1 + Rating
+end,AR,Players)},
+Acc1
+end,{0,0,0,0},Champ),
+{NT,NP,AA,AR} = Champ_stat,
+{NT,NP,AA/NP,AR/NP}.
 
 
 get_stat_test() ->
@@ -69,7 +84,9 @@ get_stat_test() ->
 
 
 filter_sick_players(Champ) ->
-    Champ.
+{NumTeams, AllPlayers} = lists:foldl(fun({team, _, TeamPlayers}, {NumTeams, TotalPlayers}) -> {NumTeams + 1, TotalPlayers ++ TeamPlayers} end, {0, []}, Champ),
+{NumPlayers, TotalAge, TotalRating} = lists:foldl(fun({player, _, Age, Rating, _}, {NumPlayers, TotalAge, TotalRating}) -> {NumPlayers + 1, TotalAge + Age, TotalRating + Rating} end, {0, 0, 0}, AllPlayers),
+{NumTeams, NumPlayers, TotalAge/NumPlayers, TotalRating/NumPlayers}.
 
 
 filter_sick_players_test() ->
@@ -105,7 +122,11 @@ filter_sick_players_test() ->
 
 
 make_pairs(Team1, Team2) ->
-    [].
+{team, _Name1, Players1} = Team1,
+{team, _Name2, Players2} = Team2,
+[{Player1, Player2} || {player, Player1, _Age1, R1, _Health1} <- Players1,
+{player, Player2, _Age, R2, _Health2} <- Players2,
+R1 + R2 > 600 ].
 
 
 make_pairs_test() ->
@@ -136,3 +157,4 @@ make_pairs_test() ->
                   {"Son of Hen","Cow Flow"}],
                  main:make_pairs(T4, T3)),
     ok.
+
