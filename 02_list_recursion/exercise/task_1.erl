@@ -6,8 +6,15 @@
 
 %% implement lists:any/2
 %% http://www.erlang.org/doc/man/lists.html#any-2
-any(Pred, List) ->
-    false.
+any(Pred, List) ->  
+case List of
+[] -> false;
+[H|T] ->
+case Pred(H) of
+true -> true;
+false -> any(Pred,T)
+end
+end.
 
 
 any_test() ->
