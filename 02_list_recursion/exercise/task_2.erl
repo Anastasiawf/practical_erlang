@@ -7,8 +7,11 @@
 
 %% implement erlang:length/1
 %% http://www.erlang.org/doc/man/erlang.html#length-1
-len(List) ->
-    0.
+len(List) ->    
+case List of
+[] -> 0;
+[_ | Tail] -> 1 + len(Tail)
+end.
 
 
 len_test() ->
