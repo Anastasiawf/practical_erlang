@@ -25,8 +25,9 @@ len_test() ->
 
 %% implement lists:reverse/1
 %% http://www.erlang.org/doc/man/lists.html#reverse-1
-reverse(List) ->
-    List.
+reverse(List) -> reverse(List,[]).
+reverse([], Acc) -> Acc;
+reverse([H|T], Acc) -> reverse(T, [H|Acc]).
 
 
 reverse_test() ->
