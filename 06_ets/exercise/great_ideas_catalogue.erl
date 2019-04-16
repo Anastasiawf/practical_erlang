@@ -1,4 +1,4 @@
--module(great_ideas_catalogue).
+-module(great_ideas).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 
@@ -37,20 +37,44 @@ init() ->
 
 
 add_idea(Id, Title, Author, Rating, Description) ->
-    ok.
+ets:insert(great_ideas_table, #idea{id = Id, title = Title, author = Author, rating = Rating, description = Description}),
+ok.
 
 
 get_idea(Id) ->
-    not_found.
+case ets:lookup(great_ideas_table, Id) of
+[] -> not_found;
+[{idea, Id, Title, Author, Rating, Description}] -> {ok,{idea,Id, Title, Author, Rating, Description}}
+end.
 
 
 ideas_by_author(Author) ->
-    [].
+MS = ets:fun2ms(fun(#idea{author = CurrAuthorValue} = CurrIdea) when CurrAuthorValue == Author -> CurrIdea
+end),
+ets:select(great_ideas_table, MS).
 
 
 ideas_by_rating(Rating) ->
-    [].
+MS = ets:fun2ms(fun(#idea{rating = CurrRatingVal} = CurrIdea)
+when CurrRatingVal >= Rating -> CurrIdea
+end),
+ets:select(great_ideas_table,MS).
 
 
 get_authors() ->
-    [].
+MS = ets:fun2ms(fun(#idea{author = Author}) -> Author end),
+Authors = ets:select(great_ideas_table, MS),
+Authors_Ideas = lists:foldl(fun(Author, Acc) ->
+case maps:find(Author, Acc) of
+{ok, Num} -> maps:put(Author, Num + 1, Acc);
+error -> maps:put(Author, 1, Acc)
+end
+end,
+#{}, Authors),
+lists:sort(fun({A1, N1}, {A2, N2}) ->
+case N1 =:= N2 of
+true -> A1 < A2;
+ _ -> N1 > N2
+end
+end, maps:to_list(Authors_Ideas)).
+
